@@ -19,6 +19,8 @@ if (now - last < INTERRUPT_INTERVAL) {
     $done({});
     return;
 }
+console.log(ENABLE_NOTIFY)
+console.log(SELECTED_REJECT)
 
 $persistentStore.write(String(now), "tg_policy_last_interrupt");
 
