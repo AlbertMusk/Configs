@@ -5,8 +5,8 @@
 
 const POLICY_GROUP = $argument.POLICY_GROUP || "Telegram";
 const INTERRUPT_INTERVAL = $argument.INTERRUPT_INTETVAL || 30;
-const ENABLE_NOTIFY = $argument.ENABLE_NOTIFY === "true";
-const SELECTED_REJECT = $argument.SELECTED_REJECT === "true";
+const ENABLE_NOTIFY = $argument.ENABLE_NOTIFY;
+const SELECTED_REJECT = $argument.SELECTED_REJECT;
 
 const now = Math.floor(Date.now() / 1000);
 
