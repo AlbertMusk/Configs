@@ -9,7 +9,7 @@ INTERRUPT_INTETVAL = input, 300, tag=打断时间间隔,desc=切回后台多少�
 ENABLE_NOTIFY = switch,true,tag=开启通知,desc=开始后每次打断都会推送通知
 
 [Script]
-http-response ^https:\/\/api\.swiftgram\.app script-path=https://raw.githubusercontent.com/AlbertMusk/Configs/refs/heads/main/loon/plugins/telegram-interrupt/script/telegram_interrupt.js, requires-body=false, timeout=5, tag=TGPolicyInterrupt
+http-response ^https:\/\/api\.swiftgram\.app script-path=https://raw.githubusercontent.com/AlbertMusk/Configs/refs/heads/main/loon/plugins/telegram-interrupt/script/telegram_interrupt.js, requires-body=false, timeout=5, tag=TGPolicyInterrupt,argument=[{INTERRUPT_INTETVAL},{ENABLE_NOTIFY},{policyName}]
 
 [mitm]
 hostname = api.swiftgram.app
