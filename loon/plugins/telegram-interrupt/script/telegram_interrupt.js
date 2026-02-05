@@ -1,105 +1,124 @@
 /**
  * Telegram Swiftgram 长连接打断脚本
- * subPolicies 是字符串子数组，先解析为 JS 数组
+ * REJECT 优先，不存在则通知并降级
  */
 
-const POLICY_GROUP = $argument.POLICY_GROUP || "Telegram";   // Telegram 策略组名称
-const INTERRUPT_INTERVAL = $argument.INTERRUPT_INTETVAL || 30;     // 打断间隔（秒）
-const ENABLE_NOTIFY = $argument.ENABLE_NOTIFY;        // 是否显示通知
-const SELECTED_REJECT = $argument.SELECTED_REJECT;       // 是否选择reject
+const POLICY_GROUP = $argument.POLICY_GROUP || "Telegram";
+const INTERRUPT_INTERVAL = $argument.INTERRUPT_INTETVAL || 30;
+const ENABLE_NOTIFY = $argument.ENABLE_NOTIFY === "true";
+const SELECTED_REJECT = $argument.SELECTED_REJECT === "true";
 
 const now = Math.floor(Date.now() / 1000);
 
-// 读取上次打断时间
+// 上次打断时间
 let last = $persistentStore.read("tg_policy_last_interrupt");
 last = last ? parseInt(last) : 0;
 
 if (now - last < INTERRUPT_INTERVAL) {
     console.log(`[TG] 跳过策略切换 (${now - last}s / ${INTERRUPT_INTERVAL}s)`);
     $done({});
-} else {
-    $persistentStore.write(String(now), "tg_policy_last_interrupt");
+    return;
+}
 
-    const current = $config.getSelectedPolicy(POLICY_GROUP);
+$persistentStore.write(String(now), "tg_policy_last_interrupt");
 
-    $config.getSubPolicies(POLICY_GROUP, function(subPolicies) {
-        if (!subPolicies) {
-            console.log("[TG] 子策略为空，放行请求");
+const current = $config.getSelectedPolicy(POLICY_GROUP);
+
+$config.getSubPolicies(POLICY_GROUP, function (subPolicies) {
+    if (!subPolicies) {
+        console.log("[TG] 子策略为空，放行请求");
+        $done({});
+        return;
+    }
+
+    let policiesArray = [];
+    try {
+        if (typeof subPolicies === "string") {
+            policiesArray = JSON.parse(subPolicies);
+        } else if (Array.isArray(subPolicies)) {
+            policiesArray = subPolicies;
+        } else {
+            console.log("[TG] 子策略格式不支持", subPolicies);
             $done({});
             return;
         }
+    } catch (e) {
+        console.log("[TG] JSON.parse 子策略失败", e);
+        $done({});
+        return;
+    }
 
-        if(SELECTED_REJECT) {
+    const policyNames = policiesArray.map(p => p.name).filter(Boolean);
+
+    /**
+     * ===== 优先尝试 REJECT =====
+     */
+    if (SELECTED_REJECT) {
+        if (policyNames.includes("REJECT")) {
+            console.log(`[TG] 使用 REJECT 打断: ${current} → REJECT → ${current}`);
+
             if (ENABLE_NOTIFY) {
                 $notification.post(
                     "Telegram 长连接已打断",
-                    "通过策略切换方式重置连接",
+                    "使用 REJECT 重置连接",
                     `${current} → REJECT → ${current}`
                 );
             }
-    
-            // 切换到备用策略
+
             $config.getConfig(POLICY_GROUP, "REJECT");
-    
-            // 0.3秒后切回原策略
+
             setTimeout(() => {
                 $config.getConfig(POLICY_GROUP, current);
                 $done();
             }, 300);
-        }
 
-        let policiesArray = [];
-        try {
-            // subPolicies 是 JSON 字符串，需要 parse
-            if (typeof subPolicies === "string") {
-                policiesArray = JSON.parse(subPolicies);
-            } else if (Array.isArray(subPolicies)) {
-                policiesArray = subPolicies;
-            } else {
-                console.log("[TG] 子策略格式不支持", subPolicies);
-                $done({});
-                return;
+            return; // 命中 REJECT，直接结束
+        } else {
+            // 🔔 新增：REJECT 不存在提醒
+            console.log("[TG] 未检测到 REJECT 子策略，降级使用备用策略");
+
+            if (ENABLE_NOTIFY) {
+                $notification.post(
+                    "⚠️提示",
+                    "未检测到 REJECT 子策略",
+                    "请在策略组中加入 REJECT，已尝试切换策略组内其他策略"
+                );
             }
-        } catch (e) {
-            console.log("[TG] JSON.parse 子策略失败", e);
-            $done({});
-            return;
+            // 不 return，继续走备用策略
         }
+    }
 
-        // 找一个与当前不同的策略
-        let alternate = null;
-        for (let i = 0; i < policiesArray.length; i++) {
-            const name = policiesArray[i].name;
-            if (name && name !== current) {
-                alternate = name;
-                break;
-            }
+    /**
+     * ===== 备用策略切换逻辑 =====
+     */
+    let alternate = null;
+    for (let i = 0; i < policyNames.length; i++) {
+        if (policyNames[i] !== current) {
+            alternate = policyNames[i];
+            break;
         }
+    }
 
-        if (!alternate) {
-            console.log("[TG] 无备用策略可切换，放行请求");
-            $done({});
-            return;
-        }
+    if (!alternate) {
+        console.log("[TG] 无备用策略可切换，放行请求");
+        $done({});
+        return;
+    }
 
-        console.log(`[TG] 策略切换打断: ${current} → ${alternate} → ${current}`);
+    console.log(`[TG] 策略切换打断: ${current} → ${alternate} → ${current}`);
 
-        // 发通知
-        if (ENABLE_NOTIFY) {
-            $notification.post(
-                "Telegram 长连接已打断",
-                "通过策略切换方式重置连接",
-                `${current} → ${alternate} → ${current}`
-            );
-        }
+    if (ENABLE_NOTIFY) {
+        $notification.post(
+            "✅Telegram 长连接已打断",
+            "通过备用策略重置连接",
+            `${current} → ${alternate} → ${current}`
+        );
+    }
 
-        // 切换到备用策略
-        $config.getConfig(POLICY_GROUP, alternate);
+    $config.getConfig(POLICY_GROUP, alternate);
 
-        // 0.3秒后切回原策略
-        setTimeout(() => {
-            $config.getConfig(POLICY_GROUP, current);
-            $done();
-        }, 300);
-    });
-}
+    setTimeout(() => {
+        $config.getConfig(POLICY_GROUP, current);
+        $done();
+    }, 300);
+});
