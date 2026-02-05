@@ -39,7 +39,7 @@ if (now - last < INTERRUPT_INTERVAL) {
             }
     
             // 切换到备用策略
-            $config.getConfig(POLICY_GROUP, alternate);
+            $config.getConfig(POLICY_GROUP, "REJECT");
     
             // 0.3秒后切回原策略
             setTimeout(() => {
