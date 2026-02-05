@@ -1,112 +1,85 @@
 /**
- * Telegram 请求打断脚本（Script 版）
- * 触发方式：Rewrite -> script-response-body
+ * Telegram Swiftgram 长连接打断脚本
+ * subPolicies 是字符串子数组，先解析为 JS 数组
  */
 
-/* ================== 参数读取 & 校验 ================== */
+const POLICY_GROUP = "Telegram";   // Telegram 策略组名称
+const INTERRUPT_INTERVAL = 30;     // 打断间隔（秒）
+const ENABLE_NOTIFY = true;        // 是否显示通知
 
-const args = $argument || {};
+const now = Math.floor(Date.now() / 1000);
 
-const POLICY_GROUP     = args.policy_group     || "Telegram";
-const BLOCK_POLICY     = args.block_policy     || "DIRECT";
-const RECOVER_POLICY   = args.recover_policy   || "Proxy";
+// 读取上次打断时间
+let last = $persistentStore.read("tg_policy_last_interrupt");
+last = last ? parseInt(last) : 0;
 
-const INTERRUPT_MS     = parseInt(args.interrupt_duration || 300);
-const LINGER_MS        = parseInt(args.linger_time || 1500);
+if (now - last < INTERRUPT_INTERVAL) {
+    console.log(`[TG] 跳过策略切换 (${now - last}s / ${INTERRUPT_INTERVAL}s)`);
+    $done({});
+} else {
+    $persistentStore.write(String(now), "tg_policy_last_interrupt");
 
-const SIZE_THRESHOLD   = parseInt(args.size_threshold || 300);
-const MIN_INTERVAL     = parseInt(args.min_interval || 2000);
+    const current = $config.getSelectedPolicy(POLICY_GROUP);
 
-const ENABLE_NOTIFY    = args.enable_notify === "1";
+    $config.getSubPolicies(POLICY_GROUP, function(subPolicies) {
+        if (!subPolicies) {
+            console.log("[TG] 子策略为空，放行请求");
+            $done({});
+            return;
+        }
 
-/* ================== 环境校验 ================== */
+        let policiesArray = [];
+        try {
+            // subPolicies 是 JSON 字符串，需要 parse
+            if (typeof subPolicies === "string") {
+                policiesArray = JSON.parse(subPolicies);
+            } else if (Array.isArray(subPolicies)) {
+                policiesArray = subPolicies;
+            } else {
+                console.log("[TG] 子策略格式不支持", subPolicies);
+                $done({});
+                return;
+            }
+        } catch (e) {
+            console.log("[TG] JSON.parse 子策略失败", e);
+            $done({});
+            return;
+        }
 
-// 只在前台 App
-if (!$environment || !$environment.isForegroundApp) {
-  $done({});
-  return;
-}
+        // 找一个与当前不同的策略
+        let alternate = null;
+        for (let i = 0; i < policiesArray.length; i++) {
+            const name = policiesArray[i].name;
+            if (name && name !== current) {
+                alternate = name;
+                break;
+            }
+        }
 
-// 必须是 Telegram
-if (!$request || !$request.url.includes("api.telegram.org")) {
-  $done({});
-  return;
-}
+        if (!alternate) {
+            console.log("[TG] 无备用策略可切换，放行请求");
+            $done({});
+            return;
+        }
 
-/* ================== 智能判断：是否有新消息 ================== */
+        console.log(`[TG] 策略切换打断: ${current} → ${alternate} → ${current}`);
 
-let body = $response?.body || "";
-if (body.length < SIZE_THRESHOLD) {
-  // 响应太小，基本是心跳 / ack
-  $done({});
-  return;
-}
+        // 发通知
+        if (ENABLE_NOTIFY) {
+            $notification.post(
+                "Telegram 长连接已打断",
+                "通过策略切换方式重置连接",
+                `${current} → ${alternate} → ${current}`
+            );
+        }
 
-/* ================== 防抖：最小间隔 ================== */
+        // 切换到备用策略
+        $config.getConfig(POLICY_GROUP, alternate);
 
-const now = Date.now();
-const lastTime = Number($persistentStore.read("tg_interrupt_ts") || 0);
-
-if (now - lastTime < MIN_INTERVAL) {
-  $done({});
-  return;
-}
-
-$persistentStore.write(String(now), "tg_interrupt_ts");
-
-/* ================== 策略切换核心逻辑 ================== */
-
-(async () => {
-  try {
-    // 当前子策略
-    const current = await $policy.getSelectedPolicy(POLICY_GROUP);
-
-    // 如果已经是 block_policy，不重复打断
-    if (current === BLOCK_POLICY) {
-      $done({});
-      return;
-    }
-
-    // 切到阻断策略
-    await $policy.setSelectPolicy(POLICY_GROUP, BLOCK_POLICY);
-
-    if (ENABLE_NOTIFY) {
-      $notification.post(
-        "Telegram 已打断连接",
-        `策略组：${POLICY_GROUP}`,
-        `→ ${BLOCK_POLICY}`
-      );
-    }
-
-    // 等待 interrupt_duration
-    await sleep(INTERRUPT_MS);
-
-    // 切回恢复策略
-    await $policy.setSelectPolicy(POLICY_GROUP, RECOVER_POLICY);
-
-    if (ENABLE_NOTIFY) {
-      $notification.post(
-        "Telegram 连接已恢复",
-        `策略组：${POLICY_GROUP}`,
-        `→ ${RECOVER_POLICY}`
-      );
-    }
-
-  } catch (e) {
-    if (ENABLE_NOTIFY) {
-      $notification.post(
-        "Telegram 打断失败",
-        "脚本异常",
-        String(e)
-      );
-    }
-  }
-
-  $done({});
-})();
-
-/* ================== 工具函数 ================== */
-
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+        // 0.3秒后切回原策略
+        setTimeout(() => {
+            $config.getConfig(POLICY_GROUP, current);
+            $done();
+        }, 300);
+    });
 }
