@@ -1,49 +1,7 @@
-#!name=Telegram 快速刷新（智能前台）
-#!desc=仅在 Telegram 前台活跃时，通过策略切换打断连接，加快消息刷新
+#!name=Telegram 策略切换打断
+#!desc=通过策略切换方式打断 api.swiftgram.app 长连接
 #!author=ChatGPT
-#!icon=https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Telegram.png
-
-################################
-# 参数声明（用于 UI）
-################################
-[Argument]
-# 是否启用插件
-enable = switch,true,tag=启用插件,desc=关闭后将不执行任何打断逻辑
-
-# Telegram 使用的策略组
-policy_group = input,"Telegram",tag=策略组名称,desc=用于 Telegram 分流的策略组名称
-
-# 打断时切换到的子策略
-block_policy = switch,"REJECT","DIRECT",tag=打断策略,desc=策略组内用于断链的子策略名称
-
-# 恢复时切回的子策略
-recover_policy = input,"Proxy",tag=恢复策略,desc=策略组内用于恢复连接的子策略名称
-
-# 打断持续时间
-interrupt_duration = input,"250",tag=打断时长(ms),desc=切换到打断策略后保持的时间
-
-# 恢复后的防抖时间
-linger_time = input,"1200",tag=灵雀时间(ms),desc=恢复后等待多久才允许下一次打断
-
-# 响应体大小阈值
-size_threshold = input,"300",tag=消息阈值(bytes),desc=响应体大于该值才认为有新消息
-
-# 最小触发间隔
-min_interval = input,"2000",tag=最小间隔(ms),desc=两次打断之间的最小时间
-
-# 是否启用通知
-enable_notify = switch,false,tag=通知提示,desc=是否在打断和恢复时发送通知
-
-################################
-# Rewrite（引用参数）
-################################
-
-[Rewrite]
-^https:\/\/api\.swiftgram\.app\/.* url script-response-body telegram_interrupt.js enable={enable}
-
-################################
-# Script（传入参数）
-################################
+#!category=Telegram
 
 [Script]
-telegram_interrupt.js=https://raw.githubusercontent.com/AlbertMusk/Configs/refs/heads/main/loon/plugins/telegram-interrupt/script/telegram_interrupt.js,timeout=5,argument=[{policy_group},{block_policy},{recover_policy},{interrupt_duration},{linger_time},{size_threshold},{min_interval},{enable_notify}]
+http-response ^https:\/\/api\.swiftgram\app script-path=https://raw.githubusercontent.com/AlbertMusk/Configs/refs/heads/main/loon/plugins/telegram-interrupt/script/telegram_interrupt.js, requires-body=false, timeout=5, tag=TGPolicyInterrupt
