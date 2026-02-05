@@ -1,8 +1,9 @@
 #!name=Telegram 策略切换打断
 #!desc=通过策略切换方式打断 api.swiftgram.app 长连接
 #!author=ChatGPT
-#!input = policyName, "Telegram"
+#!input = policyName, "Telegram", tag="策略组名称"
 #!input = INTERRUPT_INTERVAL, 30
+#!switch = ENABLE_NOTIFY, true
 
 [Script]
 http-response ^https:\/\/api\.swiftgram\.app script-path=https://raw.githubusercontent.com/AlbertMusk/Configs/refs/heads/main/loon/plugins/telegram-interrupt/script/telegram_interrupt.js, requires-body=false, timeout=5, tag=TGPolicyInterrupt
