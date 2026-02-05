@@ -1,9 +1,7 @@
 #!name=Telegram 策略切换打断
 #!desc=通过策略切换方式打断 api.swiftgram.app 长连接
 #!author=ChatGPT
-#!input = policyName
-#!input = INTERRUPT_INTERVAL
-#!switch = ENABLE_NOTIFY
+#!icon=https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Telegram_X.png
 
 [Argument]
 policyName = input,"Telegram",tag=策略组名称,desc=输入telegram规则对应的策略组的名称
