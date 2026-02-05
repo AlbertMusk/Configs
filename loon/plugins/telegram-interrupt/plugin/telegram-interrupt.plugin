@@ -3,5 +3,8 @@
 #!author=ChatGPT
 #!category=Telegram
 
+[Argument]
+policy_name = input,"Telegram",tag="电报策略组名称",desc="输入自己电报策略组的名称"
+
 [Script]
 http-response ^https:\/\/api\.swiftgram\app script-path=https://raw.githubusercontent.com/AlbertMusk/Configs/refs/heads/main/loon/plugins/telegram-interrupt/script/telegram_interrupt.js, requires-body=false, timeout=5, tag=TGPolicyInterrupt
