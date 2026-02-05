@@ -1,0 +1,26 @@
+#!name=Telegram 快速刷新（请求打断）
+#!desc=通过策略切换强制打断 Telegram 长连接，加快消息刷新（可选通知）
+#!author=ChatGPT
+#!icon=https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Telegram.png
+
+[Argument]
+policy_group=Telegram
+block_policy=DIRECT
+recover_policy=Proxy
+
+interrupt_duration=300
+linger_time=1500
+
+# 智能判断
+size_threshold=300
+min_interval=2000
+
+# 通知
+enable_notify=1
+
+[Rewrite]
+^https:\/\/api\.telegram\.org\/.* url script-response-body telegram_interrupt_smart.js
+
+
+[Script]
+telegram_interrupt.js=https://raw.githubusercontent.com/AlbertMusk/Configs/refs/heads/main/loon/plugins/telegram-interrupt/script/telegram_interrupt.js,timeout=5
