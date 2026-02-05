@@ -3,7 +3,7 @@
  * subPolicies 是字符串子数组，先解析为 JS 数组
  */
 
-const POLICY_GROUP = $argument.policyName || "Telegram";   // Telegram 策略组名称
+const POLICY_GROUP = $argument.POLICY_GROUP || "Telegram";   // Telegram 策略组名称
 const INTERRUPT_INTERVAL = $argument.INTERRUPT_INTETVAL || 30;     // 打断间隔（秒）
 const ENABLE_NOTIFY = $argument.ENABLE_NOTIFY;        // 是否显示通知
 const SELECTED_REJECT = $argument.SELECTED_REJECT;       // 是否选择reject
