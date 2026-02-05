@@ -5,7 +5,8 @@
 
 const POLICY_GROUP = $argument.policyName || "Telegram";   // Telegram 策略组名称
 const INTERRUPT_INTERVAL = $argument.INTERRUPT_INTETVAL || 30;     // 打断间隔（秒）
-const ENABLE_NOTIFY = $argument.ENABLE_NOTIFY || true;        // 是否显示通知
+const ENABLE_NOTIFY = $argument.ENABLE_NOTIFY;        // 是否显示通知
+const SELECTED_REJECT = $argument.SELECTED_REJECT;       // 是否选择reject
 
 const now = Math.floor(Date.now() / 1000);
 
@@ -26,6 +27,25 @@ if (now - last < INTERRUPT_INTERVAL) {
             console.log("[TG] 子策略为空，放行请求");
             $done({});
             return;
+        }
+
+        if(SELECTED_REJECT) {
+            if (ENABLE_NOTIFY) {
+                $notification.post(
+                    "Telegram 长连接已打断",
+                    "通过策略切换方式重置连接",
+                    `${current} → REJECT → ${current}`
+                );
+            }
+    
+            // 切换到备用策略
+            $config.getConfig(POLICY_GROUP, alternate);
+    
+            // 0.3秒后切回原策略
+            setTimeout(() => {
+                $config.getConfig(POLICY_GROUP, current);
+                $done();
+            }, 300);
         }
 
         let policiesArray = [];
