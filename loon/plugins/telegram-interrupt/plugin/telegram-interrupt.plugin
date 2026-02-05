@@ -14,7 +14,7 @@ enable = switch,true,tag=启用插件,desc=关闭后将不执行任何打断逻�
 policy_group = input,"Telegram",tag=策略组名称,desc=用于 Telegram 分流的策略组名称
 
 # 打断时切换到的子策略
-block_policy = input,"DIRECT",tag=打断策略,desc=策略组内用于断链的子策略名称
+block_policy = switch,"REJECT","DIRECT",tag=打断策略,desc=策略组内用于断链的子策略名称
 
 # 恢复时切回的子策略
 recover_policy = input,"Proxy",tag=恢复策略,desc=策略组内用于恢复连接的子策略名称
@@ -39,7 +39,7 @@ enable_notify = switch,false,tag=通知提示,desc=是否在打断和恢复时�
 ################################
 
 [Rewrite]
-^https:\/\/api\.telegram\.org\/.* url script-response-body telegram_interrupt.js enable={enable}
+^https:\/\/api\.swiftgram\.app\/.* url script-response-body telegram_interrupt.js enable={enable}
 
 ################################
 # Script（传入参数）
