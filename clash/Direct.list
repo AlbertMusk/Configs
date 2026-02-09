@@ -65,3 +65,8 @@ DOMAIN-SUFFIX,steamchina.com
 DOMAIN-SUFFIX,steamcontent.com
 DOMAIN-SUFFIX,steamserver.net
 DOMAIN-SUFFIX,steamusercontent.com
+
+# 视频app分流
+DOMAIN-SUFFIX,emw5es6.com
+DOMAIN-SUFFIX,sh75d6qk.com
+
