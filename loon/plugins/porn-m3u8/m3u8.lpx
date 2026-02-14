@@ -10,7 +10,7 @@ http-request (?i)\.m3u8(?:\?|#|$) script-path=https://raw.githubusercontent.com/
 sch = input,"mkvpipurl://",tag=输入完整scheme,desc=
  
 [MitM]
-hostname = *.cloudfront.net,long.gfuhubh.cn,*.cdn2020.com,surrit.com
+hostname = *.cloudfront.net,long.gfuhubh.cn,*.cdn2020.com,surrit.com,p3.unpljks.top
  
  
  
