@@ -1,0 +1,13 @@
+#!name=Swiftgram t.me Redirect (Fallback)
+#!desc=t.me 链接跳转 Swiftgram，失败可回退官方 Telegram
+#!author=Hi Jacker
+#!homepage=https://github.com/AlbertMusk
+#!icon=https://telegram.org/img/t_logo.png
+#!arguments=enable_fallback=true,debug=false
+
+[Script]
+http-request ^https?:\/\/t\.me\/(.*) script-path=swiftgram-redirect.js, requires-body=false, timeout=5
+http-request ^https?:\/\/telegram\.me\/(.*) script-path=swiftgram-redirect.js, requires-body=false, timeout=5
+
+[MITM]
+hostname = t.me, telegram.me
