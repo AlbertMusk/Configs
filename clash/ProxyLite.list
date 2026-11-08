@@ -22,3 +22,13 @@ DOMAIN-SUFFIX,dns.quad9.net
 DOMAIN-SUFFIX,hk-hkg.doh.sb
 
 DOMAIN-SUFFIX,guywlarguqtlufvm.cc
+
+DOMAIN-SUFFIX,smoot.apple.com
+DOMAIN-SUFFIX,guzzoni.apple.com
+DOMAIN,api-glb-sea.smoot.apple.com
+
+DOMAIN-SUFFIX,apple-relay.apple.com
+DOMAIN-SUFFIX,apple-relay.cloudflare.com
+DOMAIN-KEYWORD,apple-relay
+
+DOMAIN-SUFFIX,gateway.icloud.com
